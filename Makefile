@@ -1,12 +1,16 @@
-DIR=test_dir
-MAL_DIR=malicious_dir
-INTERVAL=5
+DIR ?= test_dir
+MAL_DIR ?= malicious_dir
+INTERVAL ?= 5
 
-all:
+.PHONY: all prebuild run restore
+
+all: run
+
+prebuild:
 	mkdir -p $(MAL_DIR)
 
-run:
+run: prebuild
 	./antivirusd.sh $(DIR) $(MAL_DIR) $(INTERVAL)
 
-restore:
+restore: prebuild
 	./restore.sh $(DIR) $(MAL_DIR)
