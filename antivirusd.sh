@@ -16,5 +16,19 @@ if [ ! -d "$DIR" ]; then
 fi
 
 mkdir -p "$MAL_DIR"
+if ! [[ "$INTERVAL" =~ ^[0-9]+$ ]] || [ "$INTERVAL" -lt 1 ]; then
+    echo "Error: interval-secs must be a positive integer" >&2
+    exit 1
+fi
 
-echo "Monitoring $DIR, quarantine is $MAL_DIR, interval is $INTERVAL secon
+
+LAST="directory-info.last"
+NEW="directory-info.new"
+
+
+snapshot() {
+    ls -l "$DIR" > "$1"
+}
+echo "Monitoring $DIR, quarantine is $MAL_DIR, interval is $INTERVAL seconds"
+snapshot "$LAST"
+echo "Snapshot saved to $LAST"
