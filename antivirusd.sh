@@ -40,14 +40,12 @@ is_malicious() {
     local name="${f##*/}"
     local ext kw
 
-    
     for ext in "${FLAGGED_EXTENSIONS[@]}"; do
         if [[ "$name" == *"$ext" ]]; then
             return 0
         fi
     done
 
-    
     for kw in "${FLAGGED_KEYWORDS[@]}"; do
         if grep -qaiF -- "$kw" "$f"; then
             return 0
@@ -56,13 +54,42 @@ is_malicious() {
 
     return 1
 }
+scan() {
+    local f name
+    for f in "$DIR"/*; do
+        if [ -f "$f" ]; then
+            name="${f##*/}"
+            if is_malicious "$f"; then
+                echo "$name is malicious and it is DELETED"
+                cp "$f" "$MAL_DIR/$name"
+                rm "$f"
+            fi
+        fi
+    done
+}
+
 echo "Monitoring $DIR, quarantine is $MAL_DIR, interval is $INTERVAL seconds"
-snapshot "$LAST"
-echo "Snapshot saved to $LAST"
-for f in "$DIR"/*; do
-    if is_malicious "$f"; then
-        echo "$f -> MALICIOUS"
-    else
-        echo "$f -> clean"
+
+if [ ! -f "$LAST" ]; then
+    scan
+    snapshot "$LAST"
+else
+    snapshot "$NEW"
+
+    if ! cmp -s "$LAST" "$NEW"; then
+        scan
+        snapshot "$LAST"
+    fi
+fi
+
+while true
+do
+    sleep "$INTERVAL"
+
+    snapshot "$NEW"
+
+    if ! cmp -s "$LAST" "$NEW"; then
+        scan
+        snapshot "$LAST"
     fi
 done
